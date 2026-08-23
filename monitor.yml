@@ -1,0 +1,51 @@
+name: BIST İzleme ve Bildirim
+
+on:
+  schedule:
+    # BIST işlem saatleri (10:00-18:00 TRT) yaklaşık UTC 07:00-15:00, hafta içi.
+    # Her 30 dakikada bir çalışır. GitHub Actions cron zamanlaması gecikmeli olabilir.
+    - cron: "*/30 7-15 * * 1-5"
+  workflow_dispatch: {}  # Manuel tetikleme için (Actions sekmesinden "Run workflow")
+
+permissions:
+  contents: write  # alert_state.json güncellemesini commit'leyebilmek için
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodları çek
+        uses: actions/checkout@v4
+
+      - name: Python kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Bağımlılıkları yükle
+        run: pip install -r requirements.txt
+
+      - name: İzleme scriptini çalıştır
+        env:
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          ALERT_EMAIL_FROM: ${{ secrets.ALERT_EMAIL_FROM }}
+          ALERT_EMAIL_TO: ${{ secrets.ALERT_EMAIL_TO }}
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          APP_BASE_URL: ${{ secrets.APP_BASE_URL }}
+        run: python monitor.py
+
+      - name: Bildirim durumunu commit'le (değişiklik varsa)
+        run: |
+          git config user.name "bist-monitor-bot"
+          git config user.email "actions@users.noreply.github.com"
+          if ! git diff --quiet -- data/alert_state.json; then
+            git add data/alert_state.json
+            git commit -m "chore: bildirim durumu güncellendi [otomatik]"
+            git push
+          else
+            echo "Durum dosyasında değişiklik yok, commit atlanıyor."
+          fi

@@ -1,0 +1,17 @@
+{
+  "_comment": "İzlenen BIST hisseleri. Hisse eklemek/çıkarmak için bu listeyi düzenlemeniz yeterlidir, kod değişikliği gerekmez.",
+  "market_suffix": ".IS",
+  "tickers": [
+    "ASELS",
+    "PCILT",
+    "FONET",
+    "VBTYZ",
+    "TRENJ",
+    "BAGFS",
+    "NETCD",
+    "OYYAT",
+    "TUPRS",
+    "NTGAZ",
+    "KTLEV"
+  ]
+}
